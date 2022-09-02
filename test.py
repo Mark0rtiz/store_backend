@@ -1,5 +1,6 @@
 from data import me
 
+
 # get data from dict
 print(me["first_name"])
 
