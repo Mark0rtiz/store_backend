@@ -3,9 +3,11 @@ import json
 import random
 from data import me
 from data import me, catalog 
+from flask_cors import CORS
+from config import db
 
 app = Flask(__name__)
-
+CORS(app) #disable CORS, anyone can access this API
 
 
 @app.get("/")
@@ -26,7 +28,9 @@ def about():
 
 #################################################
 
-
+def fix_id(obj):
+    obj["_id"] = str(obj["_id"])
+    return obj
 
 
 @app.get("/api/test")
@@ -40,7 +44,13 @@ def about_api():
 @app.get("/api/catalog")
 def get_catalog():
     #return list of products
-    return json.dumps(catalog)
+    cursor = db.Products.find({}) # read all products
+    results = []
+    for prod in cursor:
+        prod = fix_id(prod)
+        results.append(prod)
+
+    return json.dumps(results)
 
 @app.post("/api/catalog")
 def save_product():
@@ -54,10 +64,11 @@ def save_product():
     if product["price"] < 1:
         return abort(400, "ERROR: Price must be $1 or greater")
     
-    product["_id"] = random.randint(100, 100000)
-    catalog.append(product)
+    db.Products.insert_one(product)
+    
+    product["_id"] = str(product["_id"])
 
-    return product
+    return json.dumps(product)
 
 @app.get("/api/product/<id>")
 def get_product_by_id(id):
